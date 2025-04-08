@@ -44,7 +44,7 @@ cp .env.example .env
 # Start backend server
 npm run dev
 
-### 2️⃣ Frontend (React + Tailwind)
+### 1️⃣ Backend (Express + MySQL)
 
 cd cloud-marketplace-frontend
 
