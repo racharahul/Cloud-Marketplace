@@ -46,7 +46,6 @@ npm run dev
 
 ###  2️⃣ Frontend (React + Tailwind)
 
-```bash
 cd cloud-marketplace-frontend
 
 # Install dependencies
