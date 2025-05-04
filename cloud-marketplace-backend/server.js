@@ -1,5 +1,5 @@
 import express from "express";
-import cors from "cors"; // ✅ Import CORS
+import cors from "cors";
 import db from "./database.js";
 import authRoutes from "./authRoutes.js";
 import authMiddleware from "./authMiddleware.js";
@@ -7,19 +7,19 @@ import authMiddleware from "./authMiddleware.js";
 const app = express();
 const PORT = 5000;
 
-// ✅ Enable CORS
 app.use(
   cors({
-    origin: "http://localhost:3000", // Allow requests from frontend
-    methods: "GET,POST,PUT,DELETE", // Allowed HTTP methods
-    allowedHeaders: "Content-Type,Authorization", // Allowed headers
+    origin: "http://localhost:3000",
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: "Content-Type,Authorization",
   })
 );
 
 app.use(express.json());
+
+// 🔁 Rollback: Remove /api prefix
 app.use(authRoutes);
 
-// Test database connection
 app.get("/", (req, res) => {
   res.send("This is cloud-marketing place.");
 });
@@ -34,12 +34,10 @@ app.get("/test-db", async (req, res) => {
   }
 });
 
-// ✅ Protected Route (Requires Authentication)
 app.get("/profile", authMiddleware, (req, res) => {
   res.json({ message: "Welcome to your profile", user: req.user });
 });
 
-// Start the server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

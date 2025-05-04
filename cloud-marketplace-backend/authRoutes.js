@@ -2,12 +2,12 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import db from "./database.js";
-import authMiddleware from "./authMiddleware.js"; // ✅ Import the middleware
+import authMiddleware from "./authMiddleware.js";
 
 const router = express.Router();
-const JWT_SECRET = "your_jwt_secret"; // Replace with env var in production
+const JWT_SECRET = "your_jwt_secret";
 
-// 🟢 Register a New User (Buyer or Seller)
+// Register
 router.post("/register", async (req, res) => {
   const { name, email, password, role } = req.body;
 
@@ -28,7 +28,6 @@ router.post("/register", async (req, res) => {
 
     if (existingUsers.length > 0) {
       const existingRoles = existingUsers.map((user) => user.role);
-
       if (existingRoles.includes(role.toLowerCase())) {
         return res.status(400).json({
           message: `Email is already registered as a ${role}. Please log in instead.`,
@@ -51,7 +50,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// 🔵 Login User
+// Login
 router.post("/login", async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -74,58 +73,67 @@ router.post("/login", async (req, res) => {
     }
 
     const user = users[0];
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
     const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
+      { id: user.id, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    res.json({
-      message: "Login successful",
-      token,
-      role: user.role,
-    });
+    res.json({ message: "Login successful", token, role: user.role });
   } catch (error) {
     console.error("Error in /login:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
-// 🟣 Add New Product (Protected: Seller Only)
+// Add product
 router.post("/products", authMiddleware, async (req, res) => {
+  const { role, id } = req.user;
+
+  if (role !== "seller") {
+    return res.status(403).json({ message: "Only sellers can add products" });
+  }
+
+  const { title, price, description } = req.body;
+  if (!title || !price || !description) {
+    return res.status(400).json({ message: "All product fields are required" });
+  }
+
   try {
-    const { role, id } = req.user; // ✅ Comes from middleware
-
-    if (role !== "seller") {
-      return res.status(403).json({ message: "Only sellers can add products" });
-    }
-
-    const { title, price, description } = req.body;
-
-    if (!title || !price || !description) {
-      return res
-        .status(400)
-        .json({ message: "All product fields are required" });
-    }
-
     await db.query(
       "INSERT INTO products (seller_id, title, price, description) VALUES (?, ?, ?, ?)",
       [id, title, price, description]
     );
-
     res.status(201).json({ message: "Product added successfully" });
   } catch (error) {
     console.error("Error in /products:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Get seller's products
+router.get("/my-products", authMiddleware, async (req, res) => {
+  const { role, id } = req.user;
+
+  if (role !== "seller") {
+    return res
+      .status(403)
+      .json({ message: "Only sellers can view their products" });
+  }
+
+  try {
+    const [products] = await db.query(
+      "SELECT id, title, price, description FROM products WHERE seller_id = ?",
+      [id]
+    );
+    res.json(products);
+  } catch (error) {
+    console.error("Error in GET /my-products:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });

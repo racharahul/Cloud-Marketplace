@@ -1,4 +1,3 @@
-// src/pages/AddProduct.jsx
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +21,7 @@ const AddProduct = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:5000/api/products",
+        "http://localhost:5000/products", // ✅ rolled back from /api/products
         product,
         {
           headers: {
@@ -34,8 +33,8 @@ const AddProduct = () => {
       alert("Product added successfully!");
       navigate("/seller/dashboard");
     } catch (error) {
-      console.error(error);
-      alert("Error adding product");
+      console.error("Error adding product:", error);
+      alert(error.response?.data?.message || "Error adding product");
     }
   };
 
@@ -82,7 +81,7 @@ const AddProduct = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
           >
             Add Product
           </button>
